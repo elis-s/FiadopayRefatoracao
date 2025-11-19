@@ -6,6 +6,8 @@ import edu.ucsal.fiadopay.controller.PaymentResponse;
 import edu.ucsal.fiadopay.domain.Merchant;
 import edu.ucsal.fiadopay.domain.Payment;
 import edu.ucsal.fiadopay.domain.WebhookDelivery;
+import edu.ucsal.fiadopay.payment.PaymentStrategy;
+import edu.ucsal.fiadopay.payment.PaymentStrategyRegistry;
 import edu.ucsal.fiadopay.repo.MerchantRepository;
 import edu.ucsal.fiadopay.repo.PaymentRepository;
 import edu.ucsal.fiadopay.repo.WebhookDeliveryRepository;
@@ -14,35 +16,53 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
+import java.net.http.*;
 import java.time.Instant;
 import java.util.Base64;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.stream.Collectors;
 
 @Service
 public class PaymentService {
+  private final Logger log = LoggerFactory.getLogger(PaymentService.class);
+
   private final MerchantRepository merchants;
   private final PaymentRepository payments;
   private final WebhookDeliveryRepository deliveries;
   private final ObjectMapper objectMapper;
+  private final PaymentStrategyRegistry registry;
+  private final ExecutorService executor;
 
-  @Value("${fiadopay.webhook-secret}") String secret;
-  @Value("${fiadopay.processing-delay-ms}") long delay;
-  @Value("${fiadopay.failure-rate}") double failRate;
+  @Value("${fiadopay.webhook-secret}")
+  String secret;
 
-  public PaymentService(MerchantRepository merchants, PaymentRepository payments, WebhookDeliveryRepository deliveries, ObjectMapper objectMapper) {
+  @Value("${fiadopay.processing-delay-ms:1000}")
+  long delay;
+
+  @Value("${fiadopay.failure-rate:0.1}")
+  double failRate;
+
+  public PaymentService(MerchantRepository merchants,
+                        PaymentRepository payments,
+                        WebhookDeliveryRepository deliveries,
+                        ObjectMapper objectMapper,
+                        PaymentStrategyRegistry registry,
+                        ExecutorService executor) {
     this.merchants = merchants;
     this.payments = payments;
     this.deliveries = deliveries;
     this.objectMapper = objectMapper;
+    this.registry = registry;
+    this.executor = executor;
   }
 
   private Merchant merchantFromAuth(String auth){
@@ -73,14 +93,18 @@ public class PaymentService {
       if(existing.isPresent()) return toResponse(existing.get());
     }
 
-    Double interest = null;
-    BigDecimal total = req.amount();
-    if ("CARD".equalsIgnoreCase(req.method()) && req.installments()!=null && req.installments()>1){
-      interest = 1.0; // 1%/mês
-      var base = new BigDecimal("1.01");
-      var factor = base.pow(req.installments());
-      total = req.amount().multiply(factor).setScale(2, RoundingMode.HALF_UP);
+    // get strategy by reflection/registry
+    var strategy = registry.get(req.method());
+    if (strategy == null) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unsupported payment method: " + req.method());
     }
+
+    if (req.installments()!=null && req.installments()>1 && !strategy.allowInstallments()) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Installments not allowed for method " + req.method());
+    }
+
+    Double interest = strategy.monthlyInterest();
+    BigDecimal total = strategy.calculateTotal(req.amount(), req.installments()==null?1:req.installments());
 
     var payment = Payment.builder()
         .id("pay_"+UUID.randomUUID().toString().substring(0,8))
@@ -100,7 +124,8 @@ public class PaymentService {
 
     payments.save(payment);
 
-    CompletableFuture.runAsync(() -> processAndWebhook(payment.getId()));
+    // submit async processing using injected executor
+    executor.submit(() -> processAndWebhook(payment.getId()));
 
     return toResponse(payment);
   }
@@ -110,6 +135,7 @@ public class PaymentService {
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND)));
   }
 
+  @Transactional
   public Map<String,Object> refund(String auth, String paymentId){
     var merchant = merchantFromAuth(auth);
     var p = payments.findById(paymentId)
@@ -155,7 +181,7 @@ public class PaymentService {
       );
       payload = objectMapper.writeValueAsString(event);
     } catch (Exception e) {
-      // fallback mínimo: não envia webhook se falhar a serialização
+      log.error("Failed to serialize webhook payload", e);
       return;
     }
 
@@ -173,7 +199,7 @@ public class PaymentService {
         .lastAttemptAt(null)
         .build());
 
-    CompletableFuture.runAsync(() -> tryDeliver(delivery.getId()));
+    executor.submit(() -> tryDeliver(delivery.getId()));
   }
 
   private void tryDeliver(Long deliveryId){
@@ -202,9 +228,7 @@ public class PaymentService {
       d.setDelivered(false);
       deliveries.save(d);
       if (d.getAttempts()<5){
-        try {
-          Thread.sleep(1000L * d.getAttempts());
-        } catch (InterruptedException ignored) {}
+        try { Thread.sleep(1000L * d.getAttempts()); } catch (InterruptedException ignored) {}
         tryDeliver(deliveryId);
       }
     }
@@ -225,4 +249,6 @@ public class PaymentService {
         p.getTotalWithInterest()
     );
   }
+  
+
 }
