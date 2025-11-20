@@ -133,10 +133,12 @@ OBS: (Substitua pelo paymentId que retornou)
 
 Toda a API original fornecida foi preservada (rotas, payloads, fluxo de autenticação FAKE, idempotência e webhook).
 
-_Este projeto foi desenvolvido integralmente pela equipe, incluindo modelagem, decisões de arquitetura, implementação de anotações, reflexão, estratégias de pagamento, concorrência com ExecutorService e tratamento de webhooks.
+Este projeto foi desenvolvido integralmente pela equipe, incluindo modelagem, decisões de arquitetura, implementação de anotações, reflexão, estratégias de pagamento, concorrência com ExecutorService e tratamento de webhooks.
+
 Abaixo, algumas das ferramentas utilizadas:
-Spring Boot / Spring Web / Spring Data JPA
-H2 Database
-Swagger / Springdoc OpenAPI
-Bibliotecas padrão do Java (java.util.concurrent)
-IA — utilizado exclusivamente como apoio teórico, esclarecimento de dúvidas e revisão textual. Toda implementação de código foi escrita, adaptada e validada manualmente pela equipe._
+
+* Spring Boot / Spring Web / Spring Data JPA
+* H2 Database
+* Swagger / Springdoc OpenAPI
+* Bibliotecas padrão do Java (java.util.concurrent)
+* IA — utilizado exclusivamente como apoio teórico, esclarecimento de dúvidas e revisão textual. Toda implementação de código foi escrita, adaptada e validada manualmente pela equipe.
