@@ -141,4 +141,4 @@ Abaixo, algumas das ferramentas utilizadas:
 * H2 Database
 * Swagger / Springdoc OpenAPI
 * Bibliotecas padrão do Java (java.util.concurrent)
-* IA — utilizado exclusivamente como apoio teórico, esclarecimento de dúvidas e revisão textual. Toda implementação de código foi escrita, adaptada e validada manualmente pela equipe.
+* IA: utilizado exclusivamente como apoio teórico, esclarecimento de dúvidas e revisão textual. Toda implementação de código foi escrita, adaptada e validada manualmente pela equipe.
