@@ -127,7 +127,7 @@ OBS: (Substitua pelo paymentId que retornou)
 
 * Não valida X-Signature no retorno do cliente
 * AntiFraud existe mas ainda não possui engine funcionando, seria pra uso futuro.
-* Webhook não possui dead-letter queue real, apenas retentativas simples.
+* Webhook em apenas retentativas simples.
 
 ## 10 OBSERVAÇÕES
 
