@@ -131,7 +131,7 @@ OBS: (Substitua pelo paymentId que retornou)
 
 ## 10 OBSERVAÇÕES
 
-Toda a API original fornecida pelo professor foi preservada (rotas, payloads, fluxo de autenticação FAKE, idempotência e webhook).
+Toda a API original fornecida foi preservada (rotas, payloads, fluxo de autenticação FAKE, idempotência e webhook).
 
 _Este projeto foi desenvolvido integralmente pela equipe, incluindo modelagem, decisões de arquitetura, implementação de anotações, reflexão, estratégias de pagamento, concorrência com ExecutorService e tratamento de webhooks.
 Abaixo, algumas das ferramentas utilizadas:
