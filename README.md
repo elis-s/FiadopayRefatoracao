@@ -102,7 +102,7 @@ Isso permite adicionar novos métodos de pagamento sem modificar código existen
 
 ## 8 Fluxo
 
-* Criar merchant: curl -X POST "http://localhost:8080/fiadopay/admin/merchants" -H "Content-Type: application/json" -d "{\"name\":\"Loja Teste3\",\"webhookUrl\":\"http://localhost:8080/meu-webhook\"}"
+* Criar merchant: curl -X POST "http://localhost:8080/fiadopay/admin/merchants" -H "Content-Type: application/json" -d "{\"name\":\"Loja Teste\",\"webhookUrl\":\"http://localhost:8080/meu-webhook\"}"
 <img width="1110" height="77" alt="Captura de tela 2025-11-19 160202" src="https://github.com/user-attachments/assets/05916e66-b488-4400-bd4f-beaae1fb05c7" />
 
 * Obter token: curl -X POST "http://localhost:8080/fiadopay/auth/token" -H "Content-Type: application/json" -d "{\"client_id\":\"4db3d8e6-4f45-4573-b791-d1ba0c999693\",\"client_secret\":\"6f1103541ebc4599bcf42b1ae8eae130\"}"
