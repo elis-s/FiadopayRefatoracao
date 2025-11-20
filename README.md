@@ -52,7 +52,7 @@ O payload do webhook é assinado
 A anotação @LoggedOperation  Gera logs de início, fim e tempo de execução.
 
 * AntiFraud (não utilizada, mas implementada)
-Afim de ser utilizada em cenários futuros.
+Implementada, mas não integrada ao fluxo de pagamento (utilização futura).
 
 ## 3 Anotações Criadas
 
@@ -64,8 +64,16 @@ Afim de ser utilizada em cenários futuros.
 
 ## 4 Como funciona a reflexão no projeto
 
-O projeto utiliza reflexão para registrar automaticamente todas as estratégias de pagamento presentes no pacote edu.ucsal.fiadopay.payment.
-Cada classe marcada com a anotação @PaymentMethod é detectada automaticamente pelo Spring durante o startup.
+O projeto utiliza reflexão para registrar automaticamente todas as estratégias de pagamento presentes no pacote `edu.ucsal.fiadopay.payment`.
+Cada classe marcada com a anotação `@PaymentMethod` é descoberta como bean pelo Spring, e o `PaymentStrategyRegistry` lê dinamicamente os metadados da anotação para montar um mapa de estratégias.
+
+Fluxo:
+1. Spring inicializa todos os beans que implementam PaymentStrategy.
+2. O registry usa reflexão para localizar a anotação @PaymentMethod em cada classe.
+3. O valor de `type="..."` é usado como chave do mapa.
+4. Quando o pagamento chega com `method="CARD"`, o sistema resolve a estratégia automaticamente.
+
+Isso permite adicionar novos métodos de pagamento sem modificar código existente, basta criar uma classe anotada.
 
 ## 5 Arquitetura Principal
 <img width="295" height="220" alt="Captura de tela 2025-11-19 152715" src="https://github.com/user-attachments/assets/066f12f8-18a1-4030-adba-c425af1ada61" />
@@ -121,6 +129,14 @@ OBS: (Substitua pelo paymentId que retornou)
 * AntiFraud existe mas ainda não possui engine funcionando, seria pra uso futuro.
 * Webhook não possui dead-letter queue real, apenas retentativas simples.
 
-## OBSERVAÇÕES
+## 10 OBSERVAÇÕES
 
 Toda a API original fornecida pelo professor foi preservada (rotas, payloads, fluxo de autenticação FAKE, idempotência e webhook).
+
+_Este projeto foi desenvolvido integralmente pela equipe, incluindo modelagem, decisões de arquitetura, implementação de anotações, reflexão, estratégias de pagamento, concorrência com ExecutorService e tratamento de webhooks.
+Abaixo, algumas das ferramentas utilizadas:
+Spring Boot / Spring Web / Spring Data JPA
+H2 Database
+Swagger / Springdoc OpenAPI
+Bibliotecas padrão do Java (java.util.concurrent)
+IA — utilizado exclusivamente como apoio teórico, esclarecimento de dúvidas e revisão textual. Toda implementação de código foi escrita, adaptada e validada manualmente pela equipe._
