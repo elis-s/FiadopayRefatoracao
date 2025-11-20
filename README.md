@@ -62,7 +62,12 @@ Afim de ser utilizada em cenários futuros.
 
 * @LoggedOperation(value): Marca métodos que devem ser logados via AOP
 
-## 4 Arquitetura Principal
+## 4 Como funciona a reflexão no projeto
+
+O projeto utiliza reflexão para registrar automaticamente todas as estratégias de pagamento presentes no pacote edu.ucsal.fiadopay.payment.
+Cada classe marcada com a anotação @PaymentMethod é detectada automaticamente pelo Spring durante o startup.
+
+## 5 Arquitetura Principal
 <img width="295" height="220" alt="Captura de tela 2025-11-19 152715" src="https://github.com/user-attachments/assets/066f12f8-18a1-4030-adba-c425af1ada61" />
 
 * controller: REST API
@@ -74,13 +79,20 @@ Afim de ser utilizada em cenários futuros.
 * aspects: Logging AOP
 * exception: Handler global
 
-## 5 Execução
+## 6 Padrões de Projeto Aplicados
+* Strategy Pattern — usado para métodos de pagamento (CARD, PIX, BOLETO…)
+* Factory via Reflection — criação automática das estratégias anotadas
+* AOP (Aspect-Oriented Programming) — logs com @LoggedOperation
+* Dependency Injection — serviços e strategies geridas pelo Spring
+* Template de Retentativa — entrega de webhooks com backoff progressivo
+
+## 7 Execução
 
 * Clonar & rodar: mvn spring-boot:run
 * Console do H2: http://localhost:8080/h2; JDBC URL: jdbc:h2:mem:fiadopay
 * Swagger: http://localhost:8080/swagger-ui.html
 
-## 6 Fluxo
+## 8 Fluxo
 
 * Criar merchant: curl -X POST "http://localhost:8080/fiadopay/admin/merchants" -H "Content-Type: application/json" -d "{\"name\":\"Loja Teste3\",\"webhookUrl\":\"http://localhost:8080/meu-webhook\"}"
 <img width="1110" height="77" alt="Captura de tela 2025-11-19 160202" src="https://github.com/user-attachments/assets/05916e66-b488-4400-bd4f-beaae1fb05c7" />
@@ -103,8 +115,12 @@ OBS: (Substitua pelo paymentId que retornou)
 <img width="1362" height="636" alt="Captura de tela 2025-11-19 161035" src="https://github.com/user-attachments/assets/1918a545-a47d-450d-814f-79f32d7e10c8" />
 <img width="1621" height="484" alt="Captura de tela 2025-11-19 161205" src="https://github.com/user-attachments/assets/dd6ff013-c841-41ac-bd37-363278ceff2e" />
 
-## 7 Limitações
+## 9 Limitações
 
 * Não valida X-Signature no retorno do cliente
 * AntiFraud existe mas ainda não possui engine funcionando, seria pra uso futuro.
 * Webhook não possui dead-letter queue real, apenas retentativas simples.
+
+## OBSERVAÇÕES
+
+Toda a API original fornecida pelo professor foi preservada (rotas, payloads, fluxo de autenticação FAKE, idempotência e webhook).
